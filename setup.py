@@ -15,7 +15,7 @@ Topic :: Software Development :: Libraries :: Python Modules
 Operating System :: OS Independent
 """
 
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 doclines = __doc__.split("\n")
 

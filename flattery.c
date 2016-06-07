@@ -34,7 +34,7 @@ unflatten(PyObject *ignore, PyObject *args)
 
   while (PyDict_Next(src, &pos, &k, &v))
   {
-    const char *key = PyString_AsString(k);
+    const char *key = PyUnicode_AsUTF8(k);
     const char *p;
 
     p = key;
@@ -47,7 +47,7 @@ unflatten(PyObject *ignore, PyObject *args)
 
       const char *start = p;
       while (*p && *p != '.') p++;
-      part = PyString_FromStringAndSize(start, p-start);
+      part = PyUnicode_FromStringAndSize(start, p-start);
 
       /* Advance to next part of key path, unless at the end. */
 
@@ -84,7 +84,7 @@ unflatten(PyObject *ignore, PyObject *args)
         // FIXME thorough error checking here
 
         Py_ssize_t len = PyList_Size(slot);
-        Py_ssize_t index = atol(PyString_AsString(part));
+        Py_ssize_t index = atol(PyUnicode_AsUTF8(part));
 
         /* Extend the list with [None,None,...] if necessary. */
 
@@ -185,7 +185,7 @@ flatten_internal(PyObject *src)
       Py_INCREF(elem);
       PyObject *o = flatten_internal(elem);
       Py_DECREF(elem);
-      PyObject *k = PyString_FromFormat("%zd",i);
+      PyObject *k = PyUnicode_FromFormat("%zd",i);
       PyDict_SetItem(flat, k, o);
       Py_DECREF(k);
       Py_DECREF(o);
@@ -236,9 +236,9 @@ flatten_internal(PyObject *src)
 
       while (PyDict_Next(v1, &pos2, &k2, &v2))
       {
-        const char *k1c = PyString_AsString(k1);
-        const char *k2c = PyString_AsString(k2);
-        PyObject *k = PyString_FromFormat("%s.%s",k1c,k2c);
+        const char *k1c = PyUnicode_AsUTF8(k1);
+        const char *k2c = PyUnicode_AsUTF8(k2);
+        PyObject *k = PyUnicode_FromFormat("%s.%s",k1c,k2c);
         PyDict_SetItem(dst, k, v2);
         Py_DECREF(k);
       }
@@ -284,13 +284,25 @@ PyDoc_STRVAR(module_doc, "Flattery: fast flattening and unflattening of nested d
 
 /* Initialization function for the module (*must* be called initcext) */
 
+static struct PyModuleDef moduledef = {
+  PyModuleDef_HEAD_INIT,
+  "flattery.cext",     /* m_name */
+  module_doc,  /* m_doc */
+  -1,                  /* m_size */
+  flattery_methods,    /* m_methods */
+  NULL,                /* m_reload */
+  NULL,                /* m_traverse */
+  NULL,                /* m_clear */
+  NULL,                /* m_free */
+};
+
 PyMODINIT_FUNC
-initcext(void)
+PyInit_cext(void)
 {
   /* Create the module and add the functions */
-
-  PyObject* mod = Py_InitModule3("flattery.cext", flattery_methods, module_doc);
+  PyObject* mod = PyModule_Create(&moduledef);
   if (mod == NULL)
-    return;
+    return NULL;
+  return mod;
 }
 
